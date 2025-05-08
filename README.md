@@ -1,20 +1,20 @@
-# 🔍 Trello Backend Tests with Playwright
+# 🔍 Testy automatyczne API za pomocą Playwright
 
-Projekt testów automatycznych API aplikacji Trello przy użyciu [Playwright](https://playwright.dev/).
+Projekt testów automatycznych API aplikacji Trello przy użyciu [Playwright](https://playwright.dev/) w języku JavaScript.
 
 ---
 
 ### 📁 Projekt zawiera
 
+-   Konfigurację środowiska testowego
 -   Testy API dla podstawowych funkcji Trello:
     -   Tworzenie i usuwanie tablic
     -   Tworzenie, edycję i usuwanie list
     -   Tworzenie, edycję i usuwanie kart
     -   Edycja danych
     -   Autoryzacja i uwierzytelnianie
--   Użycie Playwright Test Runnera
--   Konfigurację środowiska testowego
--   Raporty testów
+-   Użycie Playwright Test Runner'a
+<!-- -   Raporty testów -->
 
 ---
 
@@ -53,7 +53,7 @@ TOKEN=your_oauth_token
 npx playwright test
 ```
 
--   Za pomocą Playwright Test Runner UI (umożliwia pojedyncze wykonywanie testów)
+-   Za pomocą Playwright Test Runner (umożliwia pojedyncze wykonywanie testów)
 
 ```
 npx playwright test --ui

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import dotenv from 'dotenv';
 dotenv.config();
 import { readJSONFile, writeJSONFile, deleteFile } from '../test-functions/functions';
-import { boardName } from '../test-data/test-data';
+import { boardName, listName } from '../test-data/test-data';
 
 test('POST/ create a board', async ({ request }) => {
     // act
@@ -57,30 +57,22 @@ test('POST/ create new list', async ({ request }) => {
     // arrange
     const boardData = await readJSONFile('./tmp/data.json');
     const boardId = boardData.boardId;
-    const newListName = 'nowa lista21002';
 
     // act
     const response = await request.post(`https://api.trello.com/1/lists`, {
         params: {
             key: process.env.KEY,
             token: process.env.TOKEN,
-            name: newListName,
+            name: listName,
             idBoard: boardId,
         },
     });
 
-    const checkResponse = await request.get(`https://api.trello.com/1/boards/${boardId}/lists`, {
-        params: {
-            key: process.env.KEY,
-            token: process.env.TOKEN,
-        },
-    });
-    const checkResponseBody = await checkResponse.json();
-    console.log(checkResponseBody);
+    const responseBody = await response.json();
 
     const newItem = {
-        id: checkResponseBody[0].id,
-        name: checkResponseBody[0].name,
+        id: responseBody.id,
+        name: responseBody.name,
     };
 
     boardData.lists.push(newItem);
@@ -88,16 +80,37 @@ test('POST/ create new list', async ({ request }) => {
 
     // assert
     expect(response.status()).toBe(200);
-    expect(boardData.lists).toHaveLength(4);
+    expect(responseBody).toMatchObject(newItem);
     expect(boardData.lists).toContain(newItem);
+});
+
+test('GET/ verify lists after creating new list', async ({ request }) => {
+    // arrange
+    const boardData = await readJSONFile('./tmp/data.json');
+    const boardId = boardData.boardId;
+    const listLength = boardData.lists.length;
+
+    // act
+    const response = await request.get(`https://api.trello.com/1/boards/${boardId}/lists`, {
+        params: {
+            key: process.env.KEY,
+            token: process.env.TOKEN,
+        },
+    });
+
+    const responseBody = await response.json();
+
+    // assert
+    expect(response.status()).toBe(200);
+    expect(responseBody).toHaveLength(listLength);
+    expect(responseBody[0]).toMatchObject(boardData.lists[listLength - 1]);
 });
 
 test('PUT/ change name of list', async ({ request }) => {
     // arrange
     const boardData = await readJSONFile('./tmp/data.json');
-    const boardId = boardData.boardId;
-    const listId = boardData.lists[1].id;
-    const newListName = 'nowa lista2';
+    const listId = boardData.lists[boardData.lists.length - 1].id;
+    const newListName = `nowa lista ${new Date().getMilliseconds()}`;
 
     // act
     const response = await request.put(`https://api.trello.com/1/lists/${listId}`, {
@@ -110,37 +123,82 @@ test('PUT/ change name of list', async ({ request }) => {
         },
     });
 
+    const responseBody = await response.json();
+    console.log(responseBody);
+
+    boardData.lists[boardData.lists.length - 1].name = newListName;
+    await writeJSONFile('./tmp/data.json', boardData);
+
     // assert
     expect(response.status()).toBe(200);
-
-    const checkResponse = await request.get(`https://api.trello.com/1/boards/${boardId}/lists`, {
-        params: {
-            key: process.env.KEY,
-            token: process.env.TOKEN,
-        },
-    });
-    const checkResponseBody = await checkResponse.json();
-    expect(checkResponseBody[1].name).toBe(newListName);
-    boardData.lists[1].name = newListName;
-
-    await writeJSONFile('./tmp/data.json', boardData);
+    expect(responseBody.name).toBe(newListName);
+    expect(boardData.lists[boardData.lists.length - 1].name).toBe(newListName);
 });
 
-test('DEL/ delete a list', async ({ request }) => {
+test('GET/ verify list after changing name', async ({ request }) => {
     // arrange
     const boardData = await readJSONFile('./tmp/data.json');
     const boardId = boardData.boardId;
 
     // act
-    const response = await request.delete(`https://api.trello.com/1/lists/${boardId}/closed`, {
+    const response = await request.get(`https://api.trello.com/1/boards/${boardId}/lists`, {
         params: {
             key: process.env.KEY,
             token: process.env.TOKEN,
         },
     });
 
+    const responseBody = await response.json();
+
     // assert
-    await expect(response.status()).toBe(200);
+    expect(response.status()).toBe(200);
+    expect(responseBody[0].name).toBe(boardData.lists[boardData.lists.length - 1].name);
+});
+
+test('PUT/ close a list', async ({ request }) => {
+    // arrange
+    const boardData = await readJSONFile('./tmp/data.json');
+    const listId = boardData.lists[boardData.lists.length - 1].id;
+
+    // act
+    const response = await request.put(`https://api.trello.com/1/lists/${listId}/closed`, {
+        params: {
+            key: process.env.KEY,
+            token: process.env.TOKEN,
+            value: true,
+        },
+    });
+
+    const newArr = boardData.lists.filter((item) => item.id === listId);
+    newArr[0].closed = true;
+
+    await writeJSONFile('./tmp/data.json', boardData);
+
+    // assert
+    expect(response.status()).toBe(200);
+});
+
+test('PUT/ open a closed list', async ({ request }) => {
+    // arrange
+    const boardData = await readJSONFile('./tmp/data.json');
+    const listId = boardData.lists[boardData.lists.length - 1].id;
+
+    // act
+    const response = await request.put(`https://api.trello.com/1/lists/${listId}/closed`, {
+        params: {
+            key: process.env.KEY,
+            token: process.env.TOKEN,
+            value: false,
+        },
+    });
+
+    const newArr = boardData.lists.filter((item) => item.id === listId);
+    newArr[0].closed = false;
+
+    await writeJSONFile('./tmp/data.json', boardData);
+
+    // assert
+    expect(response.status()).toBe(200);
 });
 test('DEL/ delete a board', async ({ request }) => {
     // arrange
@@ -159,6 +217,6 @@ test('DEL/ delete a board', async ({ request }) => {
     await expect(response.status()).toBe(200);
 });
 
-// test.afterAll(async () => {
-//     await deleteFile('./tmp/data.json');
-// });
+test.afterAll(async () => {
+    await deleteFile('./tmp/data.json');
+});
