@@ -28,7 +28,7 @@ Projekt testów automatycznych API aplikacji Trello przy użyciu [Playwright](ht
 
 ### 🛠️ Instalacja
 
-```bash
+```
 git clone https://github.com/marcin-palinski/playwright-trello-api.git
 cd playwright-trello-api
 npm install
@@ -40,7 +40,7 @@ npm install
 
 -   Utwórz plik .env i dodaj dane autoryzacyjne Trello
 
-```bash
+```
 KEY=your_api_key
 TOKEN=your_oauth_token
 ```
