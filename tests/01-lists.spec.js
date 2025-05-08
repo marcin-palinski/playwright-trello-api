@@ -49,7 +49,8 @@ test('GET/ get lists of new board', async ({ request }) => {
     await writeJSONFile('./tmp/data.json', boardData);
 
     // assert
-    await expect(responseBody).toHaveLength(3);
+    expect(response.status()).toBe(200);
+    expect(responseBody).toHaveLength(3);
 });
 
 test('POST/ create new list', async ({ request }) => {
